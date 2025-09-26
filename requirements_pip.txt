@@ -2,7 +2,8 @@ pytest
 pytest-cov
 pyyaml
 git+https://git@github.com/eurocontrol-swim/rest-client.git
-git+https://git@github.com/eurocontrol-swim/opensky-network-client.git
+# git+https://git@github.com/eurocontrol-swim/opensky-network-client.git
+# git+https://github.com/openskynetwork/opensky-api.git#subdirectory=python
 git+https://git@github.com/eurocontrol-swim/subscription-manager-client.git
 git+https://git@github.com/eurocontrol-swim/pubsub-facades.git
 git+https://git@github.com/eurocontrol-swim/swim-qpid-proton.git

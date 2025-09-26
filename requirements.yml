@@ -16,7 +16,8 @@ dependencies:
       - redis==4.1.4
       - urllib3==1.26.8
       # Keeping GitHub repository links for private packages
-      - git+https://git@github.com/eurocontrol-swim/opensky-network-client.git@0.0.7
+      # - git+https://git@github.com/eurocontrol-swim/opensky-network-client.git@0.0.7
+      # - "git+https://github.com/openskynetwork/opensky-api.git#subdirectory=python"
       - git+https://git@github.com/eurocontrol-swim/pubsub-facades.git@0.1.0
       - git+https://git@github.com/eurocontrol-swim/rest-client.git@0.1.1
       - git+https://git@github.com/eurocontrol-swim/subscription-manager-client.git@0.0.10

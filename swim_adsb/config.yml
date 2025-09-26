@@ -49,4 +49,6 @@ ADSB:
     Athens: 'LGAV'
   INTERVAL_IN_SEC: 5
   TRAFFIC_TIMESPAN_IN_DAYS: 3
+  OPENSKY_CLIENT_ID: 'your_opensky_client_id'
+  OPENSKY_CLIENT_SECRET: 'your_opensky_client_secret'
 

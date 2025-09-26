@@ -71,9 +71,12 @@ config = _from_yaml(filename=resource_filename(__name__, 'config.yml'))
 # messages will be routed
 swim_publisher = SWIMPublisher.create_from_config(_get_config_path())
 
-
 # configure topics
-air_traffic = AirTraffic(traffic_time_span_in_days=config['ADSB']['TRAFFIC_TIMESPAN_IN_DAYS'])
+air_traffic = AirTraffic(
+    traffic_time_span_in_days=config['ADSB']['TRAFFIC_TIMESPAN_IN_DAYS'],
+    client_id=config['ADSB']['OPENSKY_CLIENT_ID'],
+    client_secret=config['ADSB']['OPENSKY_CLIENT_SECRET']
+)
 interval_in_sec = config['ADSB']['INTERVAL_IN_SEC']
 
 for city, code in config['ADSB']['CITIES'].items():
@@ -87,7 +90,6 @@ for city, code in config['ADSB']['CITIES'].items():
         message_producer=partial(air_traffic.departures_handler, code),
         interval_in_sec=interval_in_sec
     ))
-
 
 if __name__ == '__main__':
     swim_publisher.run()
