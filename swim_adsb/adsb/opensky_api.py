@@ -320,7 +320,7 @@ class OpenSkyApi(object):
         self._api_url = "https://opensky-network.org/api"
         self._last_requests = defaultdict(lambda: 0)
 
-    def _build_session(self, total_retries: int = 5, backoff_factor: float = 0.5) -> requests.Session:
+    def _build_session(self, total_retries: int = 5, backoff_factor: float = 1.5) -> requests.Session:
         """
         Create a requests.Session configured to automatically retry on transient failures,
         including HTTP 429 (rate limit), honoring Retry-After when provided.
@@ -375,6 +375,47 @@ class OpenSkyApi(object):
         # leave a small buffer (60s) to proactively refresh
         return bool(self._access_token) and (time.time() + 60 < self._token_expiry_epoch)
 
+    @staticmethod
+    def _redact_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
+        """Return a copy of headers with sensitive values redacted."""
+        if not headers:
+            return {}
+        redacted = dict(headers)
+        for k in list(redacted.keys()):
+            lk = k.lower()
+            if lk in ("authorization", "proxy-authorization", "cookie", "set-cookie"):
+                redacted[k] = "<redacted>"
+            elif "secret" in lk or "token" in lk:
+                redacted[k] = "<redacted>"
+        return redacted
+
+    def _log_request_response(self, r: requests.Response, note: str = "") -> None:
+        """Log request/response headers at DEBUG level with redaction."""
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+        try:
+            req = r.request
+            logger.debug(
+                "%sRequest: %s %s | headers=%s",
+                f"[{note}] " if note else "",
+                req.method,
+                req.url,
+                self._redact_headers(dict(req.headers)),
+            )
+            logger.debug(
+                "%sResponse: %s | headers=%s",
+                f"[{note}] " if note else "",
+                f"{r.status_code} {r.reason}",
+                self._redact_headers(dict(r.headers)),
+            )
+            # Surface OpenSky rate-limit hints if present
+            x_rem = r.headers.get("X-Rate-Limit-Remaining")
+            x_ra = r.headers.get("X-Rate-Limit-Retry-After-Seconds")
+            if x_rem is not None or x_ra is not None:
+                logger.debug("Rate limit: remaining=%s, retry-after-seconds=%s", x_rem, x_ra)
+        except Exception as e:
+            logger.debug("Failed to log headers: %r", e)
+
     def _fetch_access_token(self, force: bool = False) -> Optional[str]:
         """Obtain (and cache) an OAuth2 access token using client credentials.
 
@@ -402,6 +443,8 @@ class OpenSkyApi(object):
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=15.0,
             )
+            # NEW: log token request/response headers (body not logged)
+            self._log_request_response(r, note="token")
         except Exception as e:
             logger.debug("Token request failed: %r", e)
             raise
@@ -455,12 +498,16 @@ class OpenSkyApi(object):
 
         # First attempt
         r = self._session.get(url, auth=auth, headers=headers, params=params, timeout=15.0)
+        # NEW: log initial request/response headers
+        self._log_request_response(r, note="initial")
 
         # If token expired, refresh once & retry
         if r.status_code == 401 and self._has_oauth():
             self._fetch_access_token(force=True)
             headers.update(self._auth_headers())
             r = self._session.get(url, headers=headers, params=params, timeout=15.0)
+            # NEW: log retry request/response headers
+            self._log_request_response(r, note="retry")
 
         if r.status_code == 200:
             self._last_requests[callee] = time.time()
