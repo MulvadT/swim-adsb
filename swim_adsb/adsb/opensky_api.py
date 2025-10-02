@@ -30,6 +30,13 @@ from datetime import datetime
 from typing import Optional, Tuple, Callable, Dict, Any
 
 import requests
+from requests.adapters import HTTPAdapter
+
+try:
+    # urllib3 v1/v2 location
+    from urllib3.util.retry import Retry
+except Exception:
+    Retry = None  # Fallback handled in _build_session
 
 logger = logging.getLogger("opensky_api")
 logger.addHandler(logging.NullHandler())
@@ -309,9 +316,50 @@ class OpenSkyApi(object):
         self._token_expiry_epoch: float = 0.0  # epoch seconds
 
         # HTTP plumbing
-        self._session = session or requests.Session()
+        self._session = session or self._build_session()
         self._api_url = "https://opensky-network.org/api"
         self._last_requests = defaultdict(lambda: 0)
+
+    def _build_session(self, total_retries: int = 5, backoff_factor: float = 0.5) -> requests.Session:
+        """
+        Create a requests.Session configured to automatically retry on transient failures,
+        including HTTP 429 (rate limit), honoring Retry-After when provided.
+        """
+        s = requests.Session()
+
+        if Retry is None:
+            return s  # No urllib3 Retry available; return plain session
+
+        # Build a Retry object compatible with urllib3 v1 and v2
+        allowed = frozenset(["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"])
+        status_list = (429, 500, 502, 503, 504)
+        try:
+            retry = Retry(
+                total=total_retries,
+                connect=total_retries,
+                read=total_retries,
+                status=total_retries,
+                backoff_factor=backoff_factor,
+                status_forcelist=status_list,
+                allowed_methods=allowed,  # urllib3 v1.26+/v2
+                respect_retry_after_header=True,
+                raise_on_status=False,  # return last response after retries
+            )
+        except TypeError:
+            # Fallback for older urllib3
+            retry = Retry(
+                total=total_retries,
+                connect=total_retries,
+                read=total_retries,
+                backoff_factor=backoff_factor,
+                status_forcelist=status_list,
+                method_whitelist=allowed,  # deprecated alias
+            )
+
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=10, pool_maxsize=10)
+        s.mount("http://", adapter)
+        s.mount("https://", adapter)
+        return s
 
     # -----------------------------
     # OAuth2 helpers

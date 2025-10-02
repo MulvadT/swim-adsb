@@ -1,20 +1,20 @@
 name: swim-adsb
 dependencies:
   - python=3.9.7
-  - pytest=6.2.5
+  - pytest=7.4.4
   - pytest-cov=3.0.0
-  - pyyaml=6.0
-  - attrs=21.4.0
-  - packaging=21.3
-  - pip=21.2.4
+  - pyyaml=6.0.1
+  - attrs=23.2.0
+  - packaging=24.1
+  - pip=24.0
   - pip:
       - cachetools==5.0.0
       - requests==2.27.1
+      - urllib3==1.26.18
       - python-qpid-proton==0.36.0
-      - pymongo==4.0
+      - pymongo==3.12.3
       - mongoengine==0.24.0
       - redis==4.1.4
-      - urllib3==1.26.8
       # Keeping GitHub repository links for private packages
       # - git+https://git@github.com/eurocontrol-swim/opensky-network-client.git@0.0.7
       # - "git+https://github.com/openskynetwork/opensky-api.git#subdirectory=python"

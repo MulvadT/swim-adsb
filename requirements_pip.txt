@@ -1,6 +1,7 @@
 pytest
 pytest-cov
 pyyaml
+requests
 git+https://git@github.com/eurocontrol-swim/rest-client.git
 # git+https://git@github.com/eurocontrol-swim/opensky-network-client.git
 # git+https://github.com/openskynetwork/opensky-api.git#subdirectory=python
