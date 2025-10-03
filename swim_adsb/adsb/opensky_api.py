@@ -376,7 +376,7 @@ class OpenSkyApi(object):
         return bool(self._access_token) and (time.time() + 60 < self._token_expiry_epoch)
 
     @staticmethod
-    def _redact_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
+    def _redact_headers(headers: Dict[str, str]) -> Dict[str, str]:
         """Return a copy of headers with sensitive values redacted."""
         if not headers:
             return {}
